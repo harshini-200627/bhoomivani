@@ -12,6 +12,14 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'BhūmiVāṇī Backend API is running successfully 🌾',
+    status: 'online'
+  });
+});
+
 // In-Memory Case Store (with pre-seeded demo cases)
 let casesStore = [
   {
