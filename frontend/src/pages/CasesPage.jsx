@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useFarmer } from '../context/FarmerAuthContext';
 import VoiceRecorder from '../components/VoiceRecorder';
+import { getCases } from '../services/api';
 import { FolderKanban, Activity, CheckCircle2, ArrowRight, MessageSquare, Mic, AlertCircle, RefreshCw, Calendar, Tag } from 'lucide-react';
 
 export default function CasesPage() {
@@ -47,20 +48,18 @@ export default function CasesPage() {
     fetchCases();
   }, []);
 
-  const fetchCases = async () => {
-    try {
-      const res = await fetch(`/api/cases?farmerId=${farmer.farmerId}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setCasesList(data);
-          setSelectedCase(data[0]);
-        }
-      }
-    } catch (e) {
-      console.log("Using cached cases list");
+ const fetchCases = async () => {
+  try {
+    const data = await getCases(farmer.farmerId);
+
+    if (Array.isArray(data) && data.length > 0) {
+      setCasesList(data);
+      setSelectedCase(data[0]);
     }
-  };
+  } catch (error) {
+    console.error("Failed to fetch cases:", error);
+  }
+};
 
   const handleCaseFollowup = async (choice) => {
     setContinuationChoice(choice);

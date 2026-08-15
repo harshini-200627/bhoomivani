@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useFarmer } from '../context/FarmerAuthContext';
 import VoiceRecorder from '../components/VoiceRecorder';
+import { analyzeCrop, saveCase } from '../services/api';
 import { Camera, Mic, Sparkles, AlertTriangle, CheckCircle2, Volume2, Save, RefreshCw, ArrowRight, Clock, CloudRain, ShieldAlert, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -37,70 +38,122 @@ export default function CropAnalysisPage({ initialMode = 'show', onNavigate }) {
     }
   };
 
-  const handleAnalyze = async () => {
-    setStep('analyzing');
-    try {
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          crop,
-          description,
-          image: imagePreview,
-          language
-        })
-      });
+ const handleAnalyze = async () => {
+  setStep('analyzing');
 
-      if (response.ok) {
-        const data = await response.json();
-        setAnalysisResult(data.analysis);
-        setTimeout(() => {
-          setStep('adaptive_question');
-        }, 1200);
-      } else {
-        throw new Error('API request failed');
-      }
-    } catch (error) {
-      console.warn("Backend API offline, synthesizing intelligent AI advisory");
-      setTimeout(() => {
-        setAnalysisResult({
-          possibleIssue: isTe ? "నల్ల మచ్చల తెగులు (Cercospora Leaf Spot)" : "Cercospora Leaf Spot",
-          confidence: "Moderate",
-          observations: isTe ? [
-            "ఆకులపై గోధుమ రంగు మచ్చలు గమనించబడ్డాయి.",
-            "తేమ శాతం ఎక్కువగా ఉండటం వల్ల సిలీంధ్ర వ్యాప్తి సాధ్యత ఉంది."
-          ] : [
-            "Dark brown necrotic lesions identified on leaves.",
-            "Elevated relative humidity favors fungal spore development."
-          ],
-          followUpQuestion: isTe ? "ఈ సమస్యను మీరు ఎంతకాలంగా గమనిస్తున్నారు?" : "How long have you noticed this problem?",
-          answerOptions: isTe ? [
-            "🟢 ఈ రోజే", "🟡 2–3 రోజుల నుండి", "🟠 సుమారు ఒక వారంగా", "🔴 వారం కంటే ఎక్కువ కాలంగా", "❓ ఖచ్చితంగా తెలియదు"
-          ] : [
-            "🟢 Today", "🟡 2–3 days", "🟠 About a week", "🔴 More than a week", "❓ Not sure"
-          ],
-          weatherConsideration: isTe 
-            ? "రాబోయే 24 గంటల్లో వర్షాపాతం సూచన (35%). వాతావరణం మారే అవకాశం ఉంది." 
-            : "Rain probability is around 35%. Variable weather conditions ahead.",
-          actionTiming: isTe 
-            ? "🟡 వాతావరణ హెచ్చరిక — ఈ సాయంత్రం లేదా వాతావరణం చల్లబడిన తర్వాత పరిశీలించండి."
-            : "🟡 Consider weather conditions — Spray when canopy is dry.",
-          actionTimingStatus: "caution",
-          recommendedActions: isTe ? [
-            "పొలంలో నిలిచిన నీటిని తొలగించి గాలి వెలుతురు పెంచండి.",
-            "పరిస్థితిని 48 గంటలు గమనించి, అవసరమైతే స్థానిక వ్యవసాయ విస్తరణాధికారిని (AEO) సంప్రదించండి."
-          ] : [
-            "Ensure proper field drainage and canopy airflow.",
-            "Monitor crop symptoms for 48 hours before applying non-verified spray treatments."
-          ],
-          warning: isTe 
-            ? "⚠️ గమనిక: ఇది AI ఆధారిత సహాయక వ్యవసాయ సలహా మాత్రమే." 
-            : "⚠️ Note: This is AI-assisted agricultural decision support."
+  try {
+    // Get farmer's current location
+    let lat = null;
+    let lon = null;
+
+    if (navigator.geolocation) {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            { enableHighAccuracy: true, timeout: 5000 }
+          );
         });
+
+        lat = position.coords.latitude;
+        lon = position.coords.longitude;
+      } catch (locationError) {
+        console.warn('Location not available');
+      }
+    }
+
+    // Send crop information to Render backend
+    const data = await analyzeCrop({
+      crop,
+      description,
+      image: imagePreview,
+      language,
+      lat,
+      lon
+    });
+
+    if (data.success) {
+      setAnalysisResult(data.analysis);
+
+      setTimeout(() => {
         setStep('adaptive_question');
       }, 1200);
+    } else {
+      throw new Error(data.message || 'Analysis failed');
     }
-  };
+
+  } catch (error) {
+    console.error('Backend Analysis Error:', error);
+
+    // Keep your existing fallback AI response
+    setTimeout(() => {
+      setAnalysisResult({
+        possibleIssue: isTe
+          ? "నల్ల మచ్చల తెగులు (Cercospora Leaf Spot)"
+          : "Cercospora Leaf Spot",
+
+        confidence: "Moderate",
+
+        observations: isTe
+          ? [
+              "ఆకులపై గోధుమ రంగు మచ్చలు గమనించబడ్డాయి.",
+              "తేమ శాతం ఎక్కువగా ఉండటం వల్ల సిలీంధ్ర వ్యాప్తి సాధ్యత ఉంది."
+            ]
+          : [
+              "Dark brown necrotic lesions identified on leaves.",
+              "Elevated relative humidity favors fungal spore development."
+            ],
+
+        followUpQuestion: isTe
+          ? "ఈ సమస్యను మీరు ఎంతకాలంగా గమనిస్తున్నారు?"
+          : "How long have you noticed this problem?",
+
+        answerOptions: isTe
+          ? [
+              "🟢 ఈ రోజే",
+              "🟡 2–3 రోజుల నుండి",
+              "🟠 సుమారు ఒక వారంగా",
+              "🔴 వారం కంటే ఎక్కువ కాలంగా",
+              "❓ ఖచ్చితంగా తెలియదు"
+            ]
+          : [
+              "🟢 Today",
+              "🟡 2–3 days",
+              "🟠 About a week",
+              "🔴 More than a week",
+              "❓ Not sure"
+            ],
+
+        weatherConsideration: isTe
+          ? "రాబోయే 24 గంటల్లో వర్షాపాతం సూచన ఉంది."
+          : "Variable weather conditions ahead.",
+
+        actionTiming: isTe
+          ? "🟡 వాతావరణ పరిస్థితులను పరిగణనలోకి తీసుకుని చర్య తీసుకోండి."
+          : "🟡 Consider weather conditions before taking action.",
+
+        actionTimingStatus: "caution",
+
+        recommendedActions: isTe
+          ? [
+              "పొలంలో నిలిచిన నీటిని తొలగించి గాలి వెలుతురు పెంచండి.",
+              "పరిస్థితిని 48 గంటలు గమనించండి."
+            ]
+          : [
+              "Ensure proper field drainage and canopy airflow.",
+              "Monitor crop symptoms for 48 hours."
+            ],
+
+        warning: isTe
+          ? "⚠️ గమనిక: ఇది AI ఆధారిత సహాయక వ్యవసాయ సలహా మాత్రమే."
+          : "⚠️ Note: This is AI-assisted agricultural decision support."
+      });
+
+      setStep('adaptive_question');
+    }, 1200);
+  }
+};
 
   const handleSelectAnswerOption = (option) => {
     setSelectedDurationAnswer(option);
@@ -110,20 +163,29 @@ export default function CropAnalysisPage({ initialMode = 'show', onNavigate }) {
     } catch(e){}
   };
 
-  const handleSaveCaseToMemory = () => {
+  const handleSaveCaseToMemory = async () => {
+  try {
     const newCase = {
-      caseId: `CASE-BV-${Math.floor(1000 + Math.random() * 9000)}`,
-      farmerId: farmer.farmerId,
+      farmerId: farmer?.farmerId || "BV-2847",
       crop: crop,
-      problemTitle: analysisResult?.possibleIssue || "Crop Symptom Case",
       symptoms: description || "Visual leaf symptoms uploaded",
-      status: "Monitoring",
       aiAnalysis: analysisResult,
-      updatedAt: new Date().toISOString()
+      weatherContext: "",
+      status: "Monitoring"
     };
-    updateActiveCase(newCase);
+
+    const savedCase = await saveCase(newCase);
+
+    updateActiveCase(savedCase);
     setCaseSaved(true);
-  };
+
+    console.log("Case saved successfully:", savedCase);
+
+  } catch (error) {
+    console.error("Save Case Error:", error);
+    alert("Unable to save the case. Please try again.");
+  }
+};
 
   const handleListenAdvisory = () => {
     if (!analysisResult) return;

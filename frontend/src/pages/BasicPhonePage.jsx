@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import API_URL from '../services/api';
 import { PhoneCall, PhoneOff, Mic, Volume2, Radio, CheckCircle2, Sparkles } from 'lucide-react';
 
 export default function BasicPhonePage() {
