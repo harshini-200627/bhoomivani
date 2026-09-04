@@ -1,25 +1,33 @@
 import React, { useState } from 'react';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
-import { FarmerAuthProvider } from './context/FarmerAuthContext';
+import { FarmerAuthProvider, useFarmer } from './context/FarmerAuthContext';
 import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
+import FarmerQueryPage from './pages/FarmerQueryPage';
 import CropAnalysisPage from './pages/CropAnalysisPage';
 import CasesPage from './pages/CasesPage';
 import WeatherPage from './pages/WeatherPage';
 import ProfilePage from './pages/ProfilePage';
 import BasicPhonePage from './pages/BasicPhonePage';
+import LoginPage from './pages/LoginPage';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [analysisMode, setAnalysisMode] = useState('show');
   const { t, language } = useLanguage();
+  const { isAuthenticated } = useFarmer();
   const isTe = language === 'te';
 
   const handleSelectMode = (mode) => {
     setAnalysisMode(mode);
     setActiveTab('analyze');
   };
+
+  // If user is not authenticated, render LoginPage directly
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={() => setActiveTab('dashboard')} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-[#FAF7F2]">
@@ -29,11 +37,14 @@ function AppContent() {
 
       {/* MAIN CONTENT ROUTING */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex-grow w-full">
-        {activeTab === 'home' && (
-          <LandingPage onSelectMode={handleSelectMode} onNavigate={setActiveTab} />
-        )}
         {activeTab === 'dashboard' && (
           <DashboardPage onNavigate={setActiveTab} onSelectMode={handleSelectMode} />
+        )}
+        {activeTab === 'query' && (
+          <FarmerQueryPage />
+        )}
+        {activeTab === 'home' && (
+          <LandingPage onSelectMode={handleSelectMode} onNavigate={setActiveTab} />
         )}
         {activeTab === 'analyze' && (
           <CropAnalysisPage initialMode={analysisMode} onNavigate={setActiveTab} />
@@ -48,7 +59,7 @@ function AppContent() {
           <ProfilePage />
         )}
         {activeTab === 'ivr' && (
-          <BasicPhonePage />
+          <BasicPhonePage onNavigate={setActiveTab} />
         )}
       </main>
 
@@ -68,8 +79,9 @@ function AppContent() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-6 text-xs text-emerald-200 font-medium">
-              <button onClick={() => setActiveTab('home')}>{t('navHome')}</button>
               <button onClick={() => setActiveTab('dashboard')}>{t('navDashboard')}</button>
+              <button onClick={() => setActiveTab('query')}>{t('navQuery')}</button>
+              <button onClick={() => setActiveTab('home')}>{t('navHome')}</button>
               <button onClick={() => setActiveTab('analyze')}>{t('navAnalyze')}</button>
               <button onClick={() => setActiveTab('cases')}>{t('navCases')}</button>
               <button onClick={() => setActiveTab('weather')}>{t('navWeather')}</button>

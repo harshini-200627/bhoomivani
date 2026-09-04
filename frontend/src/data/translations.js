@@ -5,7 +5,7 @@ export const translations = {
     tagline: "When the Land Speaks, We Listen.",
     heroLead: "Show your crop. Speak your problem. BhūmiVāṇī turns field conditions, local language, and weather signals into simple, actionable agricultural guidance.",
     
-    // Navigation
+    navQuery: "AI Advisory",
     navHome: "Home",
     navDashboard: "Dashboard",
     navAnalyze: "Analyze Crop",
@@ -14,6 +14,19 @@ export const translations = {
     navProfile: "My Profile",
     navIVR: "Basic Phone (IVR)",
 
+    // Farmer Query Support
+    queryTitle: "AI Advisory — Agricultural Voice Assistant",
+    querySubTitle: "Ask any farming question in your own language using natural voice dialogue.",
+    queryPlaceholder: "Type your farming question here...",
+    quickSuggestionsTitle: "Quick Example Questions",
+    btnSend: "Send Question",
+    btnSpeak: "Speak",
+    btnListening: "Listening... Speak now",
+    btnListenAudio: "🔊 Listen to Advisory",
+    btnSaveQueryCase: "📋 Save to My Cases",
+    querySavedSuccess: "Saved to My Cases! 📋",
+    askFollowUp: "Ask Follow-up Question...",
+
     // Language switcher
     chooseLanguage: "Choose your language",
     teluguName: "తెలుగు",
@@ -21,7 +34,7 @@ export const translations = {
 
     // Hero buttons
     btnAnalyzeCrop: "🌱 Analyze My Crop",
-    btnTalkBhoomivani: "🎤 Talk to BhūmiVāṇī",
+    btnTalkBhoomivani: "🎤 Start AI Advisory Call",
 
     // Hero prompt options
     heroOptionHeader: "How would you like to tell us about your problem?",
@@ -70,7 +83,7 @@ export const translations = {
     speakSectionTitle: "Tell us what you see",
     typeSectionTitle: "Or type your problem (Optional)",
     typePlaceholder: "Describe your crop problem here...",
-    btnAnalyzeNow: "Ask BhūmiVāṇī",
+    btnAnalyzeNow: "Analyze Crop Condition",
 
     // Voice Input & Output
     micReady: "Click microphone & start speaking...",
@@ -85,44 +98,42 @@ export const translations = {
     questionDuration: "How long have you noticed this problem?",
     optionToday: "🟢 Today",
     option23Days: "🟡 2–3 days",
-    optionWeek: "🟠 About a week",
-    optionMoreWeek: "🔴 More than a week",
-    optionNotSure: "❓ Not sure",
+    optionWeek: "🔴 More than a week",
+    questionSpread: "Is it spreading to nearby plants?",
+    optionYes: "Yes, spreading",
+    optionNo: "No, isolated",
+    btnGetAdvisory: "Get Action Advisory",
 
-    // Diagnostic Results
-    resultHeader: "BhūmiVāṇī Agricultural Advisory",
-    possibleIssue: "Possible Issue",
-    confidenceLevel: "Confidence Level",
-    confidenceModerate: "Moderate (AI Decision Support)",
-    confidenceHigh: "High",
-    confidenceLow: "Low - Expert Verification Recommended",
-    observationsTitle: "🔎 What We Noticed",
-    weatherContextTitle: "🌦️ Weather Context",
-    actionTimingTitle: "⏱️ Action Timing",
-    recommendedActionsTitle: "💡 Recommended Next Steps",
-    disclaimerWarning: "⚠️ Note: This is AI-assisted guidance and should be confirmed with a qualified agricultural expert when necessary.",
-    btnSaveCase: "📋 Save Case",
-    btnAskAnother: "🔄 Ask Another Question",
-
-    // Action Timing Status
-    timingFavorable: "🟢 Favorable conditions — Safe to apply treatment",
-    timingCaution: "🟡 Consider weather conditions — Rain or wind expected soon",
-    timingWait: "🔴 Wait / Reassess — Adverse conditions, avoid spraying now",
-
-    // Basic Phone Concept
-    ivrTitle: "☎️ No Smartphone? You Can Still Talk to BhūmiVāṇī.",
-    ivrSub: "Our telephony IVR voice channel connects basic-phone users directly to the same AI backend via simple phone call.",
-    btnSimulateCall: "📞 Simulate Basic Phone Call",
-    ivrListeningText: "Call connected. BhūmiVāṇī IVR is listening...",
+    // Advisory Output
+    advisoryHeader: "Agricultural Action Advisory",
+    possibleIssue: "Possible Problem",
+    whatYouSee: "Observations",
+    whatToDo: "Recommended Actions",
+    actionTiming: "When to Act (Weather Context)",
+    timingStatusWait: "⏳ WAIT — High rain risk in next 24-48h",
+    timingStatusCaution: "⚠️ CAUTION — Windy/High humidity conditions",
+    timingStatusFavorable: "✅ FAVORABLE — Clear treatment window available",
+    aiConfidence: "AI Confidence",
+    realTimeWeather: "Real-time Weather Signals",
+    temperature: "Temperature",
+    humidity: "Humidity",
+    rainProbability: "Rain Probability",
+    spraySuitability: "Spray Suitability",
+    btnSaveCase: "Save to My Cases",
+    caseSavedSuccess: "Case saved successfully!",
+    activeCaseBadge: "Active Case Stored",
     
-    // Profile
-    profileTitle: "Farmer Profile",
-    nameLabel: "Name",
-    phoneLabel: "Phone Number",
-    langLabel: "Preferred Language",
-    locationLabel: "Location",
-    cropsLabel: "Crops Grown",
-    demoBadge: "Demo Farmer Profile",
+    // Follow-up
+    followUpHeader: "Follow-up on Previous Case",
+    followUpQuestion: "Has the yellowing reduced since last spraying?",
+    conditionBetter: "🟢 Better / Improving",
+    conditionSame: "🟡 Same condition",
+    conditionWorse: "🔴 Worse / Spreading",
+    btnUpdateCase: "Update Case Status",
+
+    // Basic Phone (IVR)
+    ivrTitle: "No Smartphone? You Can Still Talk to BhūmiVāṇī.",
+    ivrSub: "Our telephony voice channel connects basic phone users directly to the agricultural AI advisory via a simple phone call.",
 
     // Common
     loading: "BhūmiVāṇī is analyzing crop conditions & weather...",
@@ -136,6 +147,7 @@ export const translations = {
     heroLead: "మీ పంటను చూపించండి. మీ సమస్యను చెప్పండి. భూమివాణి పొలం పరిస్థితులు, స్థానిక భాష మరియు వాతావరణ సంకేతాలను సరళమైన, ఆచరణాత్మక వ్యవసాయ సలహాగా మారుస్తుంది.",
     
     // Navigation
+    navQuery: "AI అడ్వైజరీ",
     navHome: "హోమ్",
     navDashboard: "డాష్‌బోర్డ్",
     navAnalyze: "పంట పరీక్ష",
@@ -144,6 +156,19 @@ export const translations = {
     navProfile: "నా ప్రొఫైల్",
     navIVR: "వాయిస్ ఫోన్ (IVR)",
 
+    // Farmer Query Support
+    queryTitle: "AI అడ్వైజరీ — వ్యవసాయ వాయిస్ అసిస్టెంట్",
+    querySubTitle: "మీ వ్యవసాయ ప్రశ్నలను మీ సొంత భాషలో మాట్లాడి లేదా టైప్ చేసి తెలుసుకోండి.",
+    queryPlaceholder: "మీ వ్యవసాయ ప్రశ్నను ఇక్కడ అడగండి...",
+    quickSuggestionsTitle: "ఉదాహరణ ప్రశ్నలు",
+    btnSend: "ప్రశ్న పంపు",
+    btnSpeak: "మాట్లాడండి",
+    btnListening: "వింటోంది... మాట్లాడండి",
+    btnListenAudio: "🔊 సలహాను వినండి",
+    btnSaveQueryCase: "📋 కేస్ లాగా సేవ్ చేయండి",
+    querySavedSuccess: "కేస్ సఫలంగా సేవ్ అయింది! 📋",
+    askFollowUp: "తదుపరి ప్రశ్న అడగండి...",
+
     // Language switcher
     chooseLanguage: "మీ భాషను ఎంచుకోండి",
     teluguName: "తెలుగు",
@@ -151,7 +176,7 @@ export const translations = {
 
     // Hero buttons
     btnAnalyzeCrop: "🌱 నా పంటను పరిశీలించు",
-    btnTalkBhoomivani: "🎤 భూమివాణితో మాట్లాడండి",
+    btnTalkBhoomivani: "🎤 AI అడ్వైజరీ కాల్ ప్రారంభించండి",
 
     // Hero prompt options
     heroOptionHeader: "మీ సమస్యను మాకు ఎలా చెప్పాలనుకుంటున్నారు?",
@@ -171,17 +196,17 @@ export const translations = {
     step2Title: "02 — భూమివాణి అర్థం చేసుకుంటుంది",
     step2Desc: "AI మీ పంట లక్షణాలను విశ్లేషించి అవసరమైన ప్రశ్నలను మాత్రమే అడుగుతుంది.",
     step3Title: "03 — పరిస్థితులను పరిశీలిస్తుంది",
-    step3Desc: "స్థానిక వాతావరణం, వర్షపు సూచనలను పరిగణనలోకి తీసుకుంటుంది.",
-    step4Title: "04 — ఆచరణాత్మక సలహా పొందండి",
-    step4Desc: "ఏమి జరుగుతోంది → ఏమి చేయాలి → ఎప్పుడు చర్య తీసుకోవాలో స్పష్టమైన సలహా పొందండి.",
+    step3Desc: "స్థానిక వాతావరణం మరియు తేమను పరిశీలించి సరైన సమయాన్ని సూచిస్తుంది.",
+    step4Title: "04 — స్పష్టమైన పరిష్కారం",
+    step4Desc: "ఏం జరుగుతోంది → ఏం చేయాలి → ఎప్పుడు చేయాలి అనే స్పష్టమైన ప్రణాళికను అందిస్తుంది.",
 
     // Dashboard
     welcomeBack: "స్వాగతం,",
-    farmerIdLabel: "రైతు ఐడీ (Farmer ID)",
-    quickActionsTitle: "త్వరిత చర్యలు",
-    activeCaseTitle: "ప్రస్తుత పంట సమస్య",
-    recentCasesTitle: "ఇటీవలి కేస్‌లు",
-    weatherSummaryTitle: "స్థానిక వాతావరణ వివరాలు",
+    farmerIdLabel: "రైతు ID",
+    quickActionsTitle: "త్వరిత సేవలు",
+    activeCaseTitle: "ప్రస్తుత యాక్టివ్ కేస్",
+    recentCasesTitle: "గతంలో నమోదైన కేస్‌లు",
+    weatherSummaryTitle: "స్థానిక వాతావరణ సమాచారం",
 
     // Analyze Crop Page
     showCropTitle: "🌱 మీ పంటను చూపించండి",
@@ -194,68 +219,66 @@ export const translations = {
     groundnut: "🥜 వేరుశనగ",
     customCrop: "🌿 ఇతర పంట",
     
-    uploadOrTake: "మీ పంట లేదా ఆకు ఫోటోను చూపించండి",
-    uploadPlaceholder: "ఫోటోను ఇక్కడ అప్‌లోడ్ చేయండి లేదా ఎంచుకోండి",
+    uploadOrTake: "పంట ఆకు ఫోటో తీయండి",
+    uploadPlaceholder: "ఫోటోను ఇక్కడ క్లిక్ చేసి అప్‌లోడ్ చేయండి",
     cameraButton: "ఫోటో తీయండి",
-    speakSectionTitle: "మీరు చూస్తున్నది చెప్పండి",
-    typeSectionTitle: "లేదా మీ సమస్యను టైప్ చేయండి (ఐచ్ఛికం)",
-    typePlaceholder: "మీ సమస్యను ఇక్కడ టైప్ చేయండి...",
-    btnAnalyzeNow: "భూమివాణిని అడగండి",
+    speakSectionTitle: "మీరు చూస్తున్న లక్షణాలను మాట్లాడండి",
+    typeSectionTitle: "లేదా సమస్యను టైప్ చేయండి (ఐచ్ఛికం)",
+    typePlaceholder: "పంట సమస్యను ఇక్కడ వివరంగా చెప్పండి...",
+    btnAnalyzeNow: "పంట స్థితిని విశ్లేషించండి",
 
     // Voice Input & Output
-    micReady: "మైక్ నొక్కి మాట్లాడటం ప్రారంభించండి...",
-    micListening: "వింటోంది... మీ భాషలో మాట్లాడండి.",
-    micProcessing: "మీ మాటలను విశ్లేషిస్తోంది...",
-    micSuccess: "మీ గొంతు విజయవంతంగా నమోదైంది!",
-    micError: "మైక్రోఫోన్ లోపం. మళ్లీ మాట్లాడటానికి ప్రయత్నించండి.",
+    micReady: "మైక్రోఫోన్ క్లిక్ చేసి మాట్లాడండి...",
+    micListening: "వింటోంది... తెలుగులో మాట్లాడండి.",
+    micProcessing: "మీ మాటలను విశ్లేషిస్తున్నాము...",
+    micSuccess: "మాటలు విజయవంతంగా గ్రహించబడ్డాయి!",
+    micError: "మైక్రోఫోన్ సమస్య. దయచేసి మళ్లీ ప్రయత్నించండి.",
     listenAudio: "🔊 సలహాను వినండి",
 
     // Adaptive Questioning
-    adaptiveHeader: "భూమివాణికి ఒక చిన్న సమాచారం కావాలి",
-    questionDuration: "ఈ సమస్యను మీరు ఎంతకాలంగా గమనిస్తున్నారు?",
-    optionToday: "🟢 ఈ రోజే",
-    option23Days: "🟡 2–3 రోజుల నుండి",
-    optionWeek: "🟠 సుమారు ఒక వారంగా",
-    optionMoreWeek: "🔴 వారం కంటే ఎక్కువ కాలంగా",
-    optionNotSure: "❓ ఖచ్చితంగా తెలియదు",
+    adaptiveHeader: "సరియైన సలహా కోసం ఒక చిన్న వివరము",
+    questionDuration: "ఈ సమస్య ఎన్ని రోజులుగా ఉంది?",
+    optionToday: "🟢 ఈ రోజే గమనించాను",
+    option23Days: "🟡 2–3 రోజులుగా ఉంది",
+    optionWeek: "🔴 వారం కంటే ఎక్కువ రోజులు",
+    questionSpread: "ఇది పక్క మొక్కలకు వ్యాపిస్తోందా?",
+    optionYes: "అవును, వ్యాపిస్తోంది",
+    optionNo: "లేదు, కొన్ని మొక్కలకే ఉంది",
+    btnGetAdvisory: "పరిష్కార సలహా పొందండి",
 
-    // Diagnostic Results
-    resultHeader: "భూమివాణి వ్యవసాయ సలహా",
-    possibleIssue: "సాధ్యమయ్యే సమస్య",
-    confidenceLevel: "నమ్మకమైన స్థాయి",
-    confidenceModerate: "మధ్యస్థం (AI వ్యవసాయ సహాయం)",
-    confidenceHigh: "అధికం",
-    confidenceLow: "తక్కువ - వ్యవసాయ అధికారి సలహా అవసరం",
-    observationsTitle: "🔎 మేము గమనించిన విషయాలు",
-    weatherContextTitle: "🌦️ వాతావరణ పరిస్థితి",
-    actionTimingTitle: "⏱️ చర్య తీసుకోదగిన సమయం",
-    recommendedActionsTitle: "💡 తదుపరి చర్యలు",
-    disclaimerWarning: "⚠️ గమనిక: ఇది AI ఆధారిత సలహా మాత్రమే. అవసరమైతే స్థానిక వ్యవసాయ విస్తరణాధికారిని (AEO) సంప్రదించండి.",
-    btnSaveCase: "📋 కేస్ సేవ్ చేయండి",
-    btnAskAnother: "🔄 మరొక ప్రశ్న అడగండి",
-
-    // Action Timing Status
-    timingFavorable: "🟢 అనుకూల వాతావరణం — మందులు పిచికారీ చేయడానికి మంచి సమయం",
-    timingCaution: "🟡 వాతావరణ హెచ్చరిక — వర్షం లేదా గాలులు వీచే అవకాశం ఉంది",
-    timingWait: "🔴 వేచి ఉండండి — ప్రస్తుతం వాతావరణం సరిగ్గా లేదు, ఆగండి",
-
-    // Basic Phone Concept
-    ivrTitle: "☎️ స్మార్ట్‌ఫోన్ లేదా ఇంటర్నెట్ లేదా? మీరు ఇప్పటికీ భూమివాణితో మాట్లాడవచ్చు.",
-    ivrSub: "సాధారణ కీప్యాడ్ ఫోన్ నుండి వాయిస్ కాల్ ద్వారా కూడా మన AI భూమివాణి సలహాలు పొందవచ్చు.",
-    btnSimulateCall: "📞 బేసిక్ ఫోన్ కాల్‌ను ప్రారంభించండి",
-    ivrListeningText: "కాల్ కనెక్ట్ అయింది. భూమివాణి వాయిస్ వింటోంది...",
+    // Advisory Output
+    advisoryHeader: "వ్యవసాయ ఆచరణాత్మక సలహా",
+    possibleIssue: "సాధ్యమైన సమస్య",
+    whatYouSee: "గమనించిన లక్షణాలు",
+    whatToDo: "చేయవలసిన పనులు",
+    actionTiming: "ఎప్పుడు మందులు వాడాలి? (వాతావరణం)",
+    timingStatusWait: "⏳ ఆగండి — రాబోయే 24-48 గంటల్లో భారీ వర్ష సూచన ఉంది",
+    timingStatusCaution: "⚠️ జాగ్రత్త — అధిక గాలులు లేదా తేమ ఉన్నందున వేచి చూడండి",
+    timingStatusFavorable: "✅ అనుకూలం — మందులు పిచికారీ చేయడానికి మంచి సమయం",
+    aiConfidence: "AI విశ్వసనీయత",
+    realTimeWeather: "స్థానిక వాతావరణ సంకేతాలు",
+    temperature: "ఉష్ణోగ్రత",
+    humidity: "గాలిలో తేమ",
+    rainProbability: "వర్ష సూచన",
+    spraySuitability: "పిచికారీ అనుకూలత",
+    btnSaveCase: "నా కేస్‌లలో భద్రపరచు",
+    caseSavedSuccess: "కేస్ విజయవంతంగా సేవ్ చేయబడింది!",
+    activeCaseBadge: "యాక్టివ్ కేస్ నిల్వ చేయబడింది",
     
-    // Profile
-    profileTitle: "రైతు వివరాలు (Profile)",
-    nameLabel: "పేరు",
-    phoneLabel: "ఫోన్ నంబరు",
-    langLabel: "ఎంచుకున్న భాష",
-    locationLabel: "ప్రాంతం / ఊరు",
-    cropsLabel: "సాగు చేస్తున్న పంటలు",
-    demoBadge: "డెమో రైతు ఐడీ",
+    // Follow-up
+    followUpHeader: "గత కేస్‌పై తదుపరి సమాచారం",
+    followUpQuestion: "గత పిచికారీ తర్వాత పంట పరిస్థితి మెరుగైందా?",
+    conditionBetter: "🟢 మెరుగైంది / తగ్గుతోంది",
+    conditionSame: "🟡 అలాగే ఉంది",
+    conditionWorse: "🔴 మరింత పెరిగింది / వ్యాపిస్తోంది",
+    btnUpdateCase: "కేస్ స్థితిని అప్‌డేట్ చేయండి",
+
+    // Basic Phone (IVR)
+    ivrTitle: "స్మార్ట్‌ఫోన్ లేదా? అయినా మీరు భూమివాణితో మాట్లాడవచ్చు.",
+    ivrSub: "మా టెలిఫోనీ వాయిస్ సేవ ద్వారా సాధారణ బేసిక్ ఫోన్ వాడే రైతులు కూడా నేరుగా వ్యవసాయ AI సలహాను ఉచితంగా పొందవచ్చు.",
 
     // Common
-    loading: "భూమివాణి మీ పంట మరియు వాతావరణాన్ని విశ్లేషిస్తోంది...",
-    errorGeneric: "ప్రస్తుతం విశ్లేషించడం వీలుపడలేదు. దయచేసి మళ్లీ ప్రయత్నించండి లేదా వాయిస్ ద్వారా చెప్పండి.",
+    loading: "భూమివాణి వాతావరణం మరియు పంటను విశ్లేషిస్తోంది...",
+    errorGeneric: "విశ్లేషణ విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి లేదా వాయిస్ ద్వారా చెప్పండి.",
   }
 };

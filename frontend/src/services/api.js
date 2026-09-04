@@ -1,5 +1,6 @@
-const API_URL = "https://bhoomivani-1.onrender.com";
+const API_URL = "http://localhost:5000";
 
+export default API_URL;
 
 export async function analyzeCrop(data) {
   const response = await fetch(`${API_URL}/api/analyze`, {

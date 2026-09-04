@@ -1,126 +1,71 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const path = require("path");
+const connectDB = require("./config/db");
+const { getAgriculturalWeather } = require("./services/weatherService");
+const { analyzeCropProblem, processFarmerQuery } = require("./services/aiService");
+const Farmer = require("./models/Farmer");
 
-const { getAgriculturalWeather } = require('./services/weatherService');
-const { analyzeCropProblem } = require('./services/aiService');
-
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+// Connect to MongoDB Database
+connectDB();
 
-// ======================================================
-// HOME
-// ======================================================
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
-app.get('/', (req, res) => {
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+// Helper to determine if query requires real-time weather
+function queryNeedsWeather(queryText) {
+  if (!queryText) return false;
+  const q = queryText.toLowerCase();
+  const weatherTerms = [
+    "rain", "weather", "temperature", "humidity", "wind", "forecast", "climate", "hot", "cold",
+    "spray", "spraying", "irrigate", "irrigation", "water", "wet", "dry",
+    "వర్షం", "వాతావరణ", "ఉష్ణోగ్రత", "తేమ", "గాలి", "పిచికారీ", "నీరు", "తడి"
+  ];
+  return weatherTerms.some((term) => q.includes(term));
+}
+
+// Root welcome endpoint
+app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: 'BhūmiVāṇī Backend API is running successfully 🌾',
-    status: 'online'
+    message: "BhūmiVāṇī Backend API is running successfully 🌾",
+    status: "online"
   });
 });
 
-// ======================================================
-// IN-MEMORY DATA STORE
-// ======================================================
-
-let casesStore = [
-  {
-    caseId: "BVM-C-001",
-    farmerId: "BVM-F-001",
-    crop: "Chilli (మిరప)",
-    symptoms: "Leaf spots and mild curling / ఆకులపై మచ్చలు మరియు ముడత",
-    aiAnalysis: {
-      possibleIssue: "నల్ల మచ్చల తెగులు (Cercospora Leaf Spot)",
-      confidence: "Moderate",
-      actionTimingStatus: "caution"
-    },
-    weatherContext: "Rain probability: 35%, Humidity: 78%",
-    status: "Monitoring",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    caseId: "BVM-C-002",
-    farmerId: "BVM-F-001",
-    crop: "Rice (వరి)",
-    symptoms: "Yellowing tip on paddy blades",
-    aiAnalysis: {
-      possibleIssue: "వరి ఆకు ఎండ తెగులు (Bacterial Leaf Blight)",
-      confidence: "High",
-      actionTimingStatus: "favorable"
-    },
-    weatherContext: "Rain probability: 10%, Humidity: 65%",
-    status: "Resolved",
-    createdAt: new Date(Date.now() - 432000000).toISOString(),
-    updatedAt: new Date(Date.now() - 172800000).toISOString()
-  }
-];
-
-let farmersStore = [
-  {
-    farmerId: "BVM-F-001",
-    name: "Demo Farmer (రైతు సోదరుడు)",
-    preferredLanguage: "te",
-    location: "Vijayawada, Andhra Pradesh",
-    crops: ["Chilli", "Rice"],
-    createdAt: new Date().toISOString()
-  }
-];
-
-// ======================================================
-// COUNTERS
-// ======================================================
-
-let farmerCounter = 1;
-let caseCounter = 2;
-
-// ======================================================
-// ID GENERATORS
-// ======================================================
-
-function generateFarmerId() {
-  farmerCounter += 1;
-  return `BVM-F-${String(farmerCounter).padStart(3, '0')}`;
-}
-
-function generateCaseId() {
-  caseCounter += 1;
-  return `BVM-C-${String(caseCounter).padStart(3, '0')}`;
-}
-
-// ======================================================
-// HEALTHCHECK
-// ======================================================
-
-app.get('/api/health', (req, res) => {
+// Healthcheck
+app.get("/api/health", (req, res) => {
   res.json({
-    status: 'ok',
-    service: 'BhūmiVāṇī Backend API',
+    status: "ok",
+    service: "BhūmiVāṇī Backend API",
     timestamp: new Date().toISOString()
   });
 });
 
-// ======================================================
-// WEATHER
-// ======================================================
+// Register Routers
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/cases", require("./routes/caseRoutes"));
 
-app.get('/api/weather', async (req, res) => {
+// Weather endpoint
+app.get("/api/weather", async (req, res) => {
   try {
     const { lat, lon } = req.query;
-
     const weather = await getAgriculturalWeather(lat, lon);
-
     res.json(weather);
-
   } catch (error) {
     console.error("Weather Error:", error);
-
     res.status(500).json({
       success: false,
       message: "Unable to fetch agricultural weather."
@@ -128,421 +73,130 @@ app.get('/api/weather', async (req, res) => {
   }
 });
 
-// ======================================================
-// AI CROP ANALYSIS
-// ======================================================
-
-app.post('/api/analyze', async (req, res) => {
+// AI Crop Analysis (Always includes agricultural weather)
+app.post("/api/analyze", async (req, res) => {
   try {
-    const {
-      crop,
-      description,
-      image,
-      language,
-      lat,
-      lon
-    } = req.body;
-
+    const { crop, description, image, language, lat, lon } = req.body;
     const weather = await getAgriculturalWeather(lat, lon);
-
     const analysis = await analyzeCropProblem({
       crop,
       description,
-      imageProvided: !!image,
-      language: language || 'te',
+      image,
+      language: language || "te",
       weather
     });
 
     res.json({
-      success: true,
+      success: analysis.success !== false,
       crop,
       weather,
       analysis,
       timestamp: new Date().toISOString()
     });
-
   } catch (error) {
     console.error("Analysis Error:", error);
-
     res.status(500).json({
       success: false,
-      message:
-        "We couldn't analyze this right now. Please try again or describe the problem using voice."
+      message: "We couldn't analyze this right now. Please try again."
     });
   }
 });
 
-// ======================================================
-// GET ALL CASES
-// ======================================================
-
-app.get('/api/cases', (req, res) => {
-  const farmerId = req.query.farmerId;
-
-  const filtered = farmerId
-    ? casesStore.filter(
-        c =>
-          c.farmerId.toUpperCase() ===
-          farmerId.trim().toUpperCase()
-      )
-    : casesStore;
-
-  res.json(filtered);
-});
-
-// ======================================================
-// GET SINGLE CASE
-// ======================================================
-
-app.get('/api/cases/:id', (req, res) => {
-  const caseId = req.params.id.trim().toUpperCase();
-
-  const item = casesStore.find(
-    c => c.caseId.toUpperCase() === caseId
-  );
-
-  if (!item) {
-    return res.status(404).json({
-      success: false,
-      error: "Case not found"
-    });
-  }
-
-  res.json(item);
-});
-
-// ======================================================
-// CREATE / SAVE CASE
-// ======================================================
-
-app.post('/api/cases', async (req, res) => {
+// AI Farmer General Query (Selective weather optimization)
+app.post("/api/farmer-query", async (req, res) => {
   try {
-    const {
-      farmerId: providedFarmerId,
-      name,
-      crop,
-      symptoms,
-      description,
-      language,
-      location,
-      lat,
-      lon,
-      image
-    } = req.body;
-
-    // ==================================================
-    // 1. WEATHER
-    // ==================================================
-
-    const weather = await getAgriculturalWeather(lat, lon);
-
-    // ==================================================
-    // 2. AI ANALYSIS
-    // ==================================================
-
-    const analysis = await analyzeCropProblem({
-      crop: crop || 'Unknown',
-      description: description || symptoms || '',
-      imageProvided: !!image,
-      language: language || 'te',
-      weather
-    });
-
-    // ==================================================
-    // 3. FIND OR CREATE FARMER
-    // ==================================================
-
-    let farmerId = providedFarmerId
-      ? providedFarmerId.trim().toUpperCase()
-      : null;
-
-    let farmer = farmerId
-      ? farmersStore.find(
-          f =>
-            f.farmerId.toUpperCase() === farmerId
-        )
-      : null;
-
-    if (!farmer) {
-      farmerId = generateFarmerId();
-
-      farmer = {
-        farmerId,
-        name: name || "Farmer",
-        preferredLanguage: language || "te",
-        location: location || "",
-        crops: crop ? [crop] : [],
-        createdAt: new Date().toISOString()
-      };
-
-      farmersStore.push(farmer);
+    const { query, conversationHistory, farmerContext, language, lat, lon } = req.body;
+    
+    // Optimize: only fetch weather if query is relevant to weather / spraying / irrigation
+    let weather = {};
+    if (queryNeedsWeather(query)) {
+      try {
+        weather = await getAgriculturalWeather(lat, lon);
+      } catch (wErr) {
+        console.warn("Weather fetch skipped or failed for query:", wErr.message);
+      }
     }
 
-    // ==================================================
-    // 4. GENERATE CASE ID
-    // ==================================================
-
-    const caseId = generateCaseId();
-
-    // ==================================================
-    // 5. CREATE CASE
-    // ==================================================
-
-    const newCase = {
-      caseId,
-      farmerId,
-
-      crop: crop || "Unknown",
-
-      symptoms:
-        symptoms ||
-        description ||
-        "Crop issue reported",
-
-      aiAnalysis: analysis,
-
-      weatherContext: weather,
-
-      status: "Monitoring",
-
-      createdAt: new Date().toISOString(),
-
-      updatedAt: new Date().toISOString()
-    };
-
-    // ==================================================
-    // 6. SAVE CASE
-    // ==================================================
-
-    casesStore.unshift(newCase);
-
-    // ==================================================
-    // 7. SEND RESPONSE
-    // ==================================================
-
-    res.status(201).json({
-      success: true,
-
-      message:
-        "Problem analyzed and case registered successfully.",
-
-      farmerId,
-
-      caseId,
-
-      analysis,
-
+    const result = await processFarmerQuery({
+      query,
+      conversationHistory: conversationHistory || [],
+      farmerContext: farmerContext || {},
       weather,
-
-      farmer,
-
-      case: newCase
+      language: language || "te"
     });
 
+    res.json(result);
   } catch (error) {
-    console.error("Analyze & Save Case Error:", error);
-
+    console.error("Farmer Query Error:", error);
     res.status(500).json({
       success: false,
-      message:
-        "Unable to analyze and register the case."
+      error: "Could not process your query.",
+      advisoryText: language === "te"
+        ? "మీ పంటను నిశితంగా గమనించండి. సమస్య తీవ్రంగా ఉంటే స్థానిక వ్యవసాయ అధికారిని సంప్రదించండి."
+        : "Continue monitoring your crop. Consult an agricultural extension officer if the issue persists."
     });
   }
 });
 
-// ======================================================
-// FIND PREVIOUS CASE
-// FARMER ID + CASE ID
-// ======================================================
-
-app.get('/api/cases/:farmerId/:caseId', (req, res) => {
-
-  const farmerId =
-    req.params.farmerId
-      .trim()
-      .toUpperCase();
-
-  const caseId =
-    req.params.caseId
-      .trim()
-      .toUpperCase();
-
-  console.log("=================================");
-  console.log("FIND PREVIOUS CASE");
-  console.log("Farmer ID:", farmerId);
-  console.log("Case ID:", caseId);
-  console.log("=================================");
-
-  // ==================================================
-  // FIND FARMER
-  // ==================================================
-
-  const farmer = farmersStore.find(
-    f =>
-      f.farmerId
-        .trim()
-        .toUpperCase() === farmerId
-  );
-
-  if (!farmer) {
-    return res.status(404).json({
-      success: false,
-      message: "Farmer ID not found."
-    });
+// High-Quality Native TTS Audio Streaming (Telugu & English)
+app.get("/api/tts", async (req, res) => {
+  const { text, lang = "te" } = req.query;
+  if (!text || !text.trim()) {
+    return res.status(400).send("No text provided");
   }
 
-  // ==================================================
-  // FIND CASE
-  // ==================================================
-
-  const item = casesStore.find(
-    c =>
-      c.farmerId
-        .trim()
-        .toUpperCase() === farmerId &&
-      c.caseId
-        .trim()
-        .toUpperCase() === caseId
-  );
-
-  if (!item) {
-    return res.status(404).json({
-      success: false,
-      message:
-        "Case ID not found for this Farmer ID."
+  try {
+    const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(lang)}&client=tw-ob&q=${encodeURIComponent(text.trim())}`;
+    const response = await axios.get(googleTtsUrl, {
+      responseType: "stream",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
     });
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    response.data.pipe(res);
+  } catch (err) {
+    console.error("TTS Stream Error:", err.message);
+    res.status(500).send("TTS audio error");
   }
-
-  // ==================================================
-  // SUCCESS
-  // ==================================================
-
-  res.json({
-    success: true,
-    farmer,
-    case: item
-  });
 });
 
-// ======================================================
-// CASE CONTINUATION / FOLLOW-UP
-// ======================================================
-
-app.post('/api/cases/:id/continue', (req, res) => {
-
-  const id = req.params.id;
-
-  const {
-    progressChoice,
-    additionalVoiceNote,
-    language
-  } = req.body;
-
-  const item = casesStore.find(
-    c => c.caseId === id
-  );
-
-  if (!item) {
-    return res.status(404).json({
-      error: "Case not found"
+// Farmer Profile
+app.get("/api/farmer/:id", async (req, res) => {
+  try {
+    const farmerId = req.params.id.trim().toUpperCase();
+    const farmer = await Farmer.findOne({ farmerId });
+    if (!farmer) {
+      return res.status(404).json({
+        success: false,
+        message: "Farmer not found."
+      });
+    }
+    res.json({
+      success: true,
+      farmer
     });
+  } catch (error) {
+    console.error("Fetch Farmer Error:", error);
+    res.status(500).json({ success: false, message: "Server error fetching farmer profile" });
   }
-
-  const isTelugu = language === 'te';
-
-  let updatedAdvisory = "";
-
-  if (progressChoice === 'improved') {
-
-    item.status = "Improving";
-
-    updatedAdvisory = isTelugu
-      ? "పంట కోలుకుంటున్నట్లు కనిపిస్తోంది. ప్రస్తుత పరిశీలనను కొనసాగించండి."
-      : "Crop condition appears to be improving. Continue current field regimen.";
-
-  } else if (progressChoice === 'worse') {
-
-    item.status = "Escalated";
-
-    updatedAdvisory = isTelugu
-      ? "సమస్య పెరిగినందున తక్షణమే స్థానిక వ్యవసాయ విస్తరణాధికారిని (AEO) నేరుగా సంప్రదించండి."
-      : "Condition has exacerbated. Directly consult your local Agricultural Extension Officer.";
-
-  } else {
-
-    item.status = "Monitoring";
-
-    updatedAdvisory = isTelugu
-      ? "పరిస్థితిలో మార్పు లేదు. తదుపరి 24 గంటలపాటు తడి మరియు తెగులు వ్యాప్తిని గమనించండి."
-      : "Condition unchanged. Maintain canopy monitoring for next 24 hours.";
-  }
-
-  item.updatedAt = new Date().toISOString();
-
-  item.lastProgressNote = progressChoice;
-
-  item.updatedAdvisory = updatedAdvisory;
-
-  if (additionalVoiceNote) {
-    item.additionalVoiceNote =
-      additionalVoiceNote;
-  }
-
-  res.json({
-    success: true,
-    updatedCase: item,
-    message: updatedAdvisory
-  });
 });
 
-// ======================================================
-// FARMER PROFILE
-// ======================================================
-
-app.get('/api/farmer/:id', (req, res) => {
-
-  const farmerId =
-    req.params.id
-      .trim()
-      .toUpperCase();
-
-  const farmer = farmersStore.find(
-    f =>
-      f.farmerId
-        .trim()
-        .toUpperCase() === farmerId
-  );
-
-  if (!farmer) {
-    return res.status(404).json({
-      success: false,
-      message: "Farmer not found."
+// Get all farmers
+app.get("/api/farmers", async (req, res) => {
+  try {
+    const farmers = await Farmer.find().select("-password");
+    res.json({
+      success: true,
+      farmers
     });
+  } catch (error) {
+    console.error("Get Farmers Error:", error);
+    res.status(500).json({ success: false, message: "Unable to get farmers list." });
   }
-
-  res.json({
-    success: true,
-    farmer
-  });
 });
-
-// ======================================================
-// GET ALL FARMERS
-// ======================================================
-
-app.get('/api/farmers', (req, res) => {
-  res.json({
-    success: true,
-    farmers: farmersStore
-  });
-});
-
-// ======================================================
-// SERVER
-// ======================================================
 
 app.listen(PORT, () => {
-  console.log(
-    `🌾 BhūmiVāṇī Backend API running on port ${PORT}`
-  );
+  console.log(`🌾 BhūmiVāṇī Backend API running on port ${PORT}`);
 });

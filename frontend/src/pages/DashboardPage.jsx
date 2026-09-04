@@ -56,13 +56,56 @@ export default function DashboardPage({ onNavigate, onSelectMode }) {
             </p>
           </div>
 
-          <button
-            onClick={() => onSelectMode('show')}
-            className={`px-6 py-3 bg-agri-500 hover:bg-agri-600 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center space-x-2 text-sm ${isTe ? 'te-text' : ''}`}
-          >
-            <span>{t('btnAnalyzeCrop')}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => onNavigate('query')}
+              className={`px-5 py-3 bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold rounded-2xl shadow-lg transition-all flex items-center space-x-2 text-sm ${isTe ? 'te-text' : ''}`}
+            >
+              <span>💬 {isTe ? 'AI అడ్వైజరీ' : 'AI Advisory'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => onSelectMode('show')}
+              className={`px-5 py-3 bg-agri-500 hover:bg-agri-600 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center space-x-2 text-sm ${isTe ? 'te-text' : ''}`}
+            >
+              <span>📷 {t('btnAnalyzeCrop')}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* PROMINENT AI ADVISORY CARD */}
+      <div className="bg-gradient-to-r from-emerald-900 via-deepforest to-emerald-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border-2 border-agri-400/50 space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-emerald-800 pb-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center space-x-2 bg-amber-400/20 border border-amber-400/40 text-amber-300 px-3 py-1 rounded-full text-xs font-bold">
+              <span>🤖 AI Agricultural Advisory System</span>
+            </div>
+            <h2 className={`text-2xl font-extrabold ${isTe ? 'te-text' : ''}`}>
+              AI Advisory ({isTe ? 'AI వ్యవసాయ సలహాదారు' : 'AI Voice Assistant'})
+            </h2>
+            <p className={`text-sm text-emerald-200/90 ${isTe ? 'te-text' : ''}`}>
+              "Ask any farming question and get direct personalized guidance in your language."
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => onNavigate('query')}
+              className={`px-5 py-2.5 bg-agri-500 hover:bg-agri-600 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center space-x-2 ${isTe ? 'te-text' : ''}`}
+            >
+              <span>⌨️ Ask Question</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('query')}
+              className={`px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow transition-all flex items-center space-x-2 ${isTe ? 'te-text' : ''}`}
+            >
+              <Mic className="w-4 h-4" />
+              <span>🎙️ Start Voice Call</span>
+            </button>
+          </div>
         </div>
       </div>
 

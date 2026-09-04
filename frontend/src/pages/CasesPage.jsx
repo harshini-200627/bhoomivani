@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useFarmer } from '../context/FarmerAuthContext';
 import VoiceRecorder from '../components/VoiceRecorder';
-import { getCases } from '../services/api';
 import { FolderKanban, Activity, CheckCircle2, ArrowRight, MessageSquare, Mic, AlertCircle, RefreshCw, Calendar, Tag } from 'lucide-react';
 
 export default function CasesPage() {
@@ -48,18 +47,20 @@ export default function CasesPage() {
     fetchCases();
   }, []);
 
- const fetchCases = async () => {
-  try {
-    const data = await getCases(farmer.farmerId);
-
-    if (Array.isArray(data) && data.length > 0) {
-      setCasesList(data);
-      setSelectedCase(data[0]);
+  const fetchCases = async () => {
+    try {
+      const res = await fetch(`/api/cases?farmerId=${farmer.farmerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setCasesList(data);
+          setSelectedCase(data[0]);
+        }
+      }
+    } catch (e) {
+      console.log("Using cached cases list");
     }
-  } catch (error) {
-    console.error("Failed to fetch cases:", error);
-  }
-};
+  };
 
   const handleCaseFollowup = async (choice) => {
     setContinuationChoice(choice);
@@ -129,7 +130,14 @@ export default function CasesPage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs font-mono opacity-80">{c.caseId}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-xs font-mono opacity-80">{c.caseId}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      c.caseType === 'query' ? 'bg-indigo-100 text-indigo-900 border border-indigo-200' : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                    }`}>
+                      {c.caseType === 'query' ? '💬 Query Case' : '📷 Disease Case'}
+                    </span>
+                  </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     c.status === 'Resolved' ? 'bg-emerald-200 text-emerald-950' :
                     c.status === 'Escalated' ? 'bg-red-200 text-red-950' : 'bg-amber-200 text-amber-950'
@@ -141,7 +149,7 @@ export default function CasesPage() {
                   {c.crop}
                 </h3>
                 <p className={`text-xs mt-1 line-clamp-2 ${selectedCase?.caseId === c.caseId ? 'text-emerald-100' : 'text-slate-600'} ${isTe ? 'te-text' : ''}`}>
-                  {c.problemTitle || c.symptoms}
+                  {c.query || c.problemTitle || c.symptoms}
                 </p>
               </button>
             ))}
@@ -155,11 +163,18 @@ export default function CasesPage() {
             {/* Case Header */}
             <div className="flex items-center justify-between border-b pb-4">
               <div>
-                <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-3 py-1 rounded-full">
-                  {selectedCase.caseId}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-3 py-1 rounded-full">
+                    {selectedCase.caseId}
+                  </span>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                    selectedCase.caseType === 'query' ? 'bg-indigo-100 text-indigo-900' : 'bg-emerald-100 text-emerald-900'
+                  }`}>
+                    {selectedCase.caseType === 'query' ? '💬 Farmer Advisory Query Case' : '📷 Crop Disease Analysis Case'}
+                  </span>
+                </div>
                 <h2 className={`text-2xl font-extrabold text-deepforest mt-2 ${isTe ? 'te-text' : ''}`}>
-                  {selectedCase.crop} — {selectedCase.problemTitle}
+                  {selectedCase.crop} — {selectedCase.query || selectedCase.problemTitle || 'Agricultural Case'}
                 </h2>
               </div>
               <div className="text-right">

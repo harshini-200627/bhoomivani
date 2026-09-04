@@ -47,7 +47,7 @@ export default function LandingPage({ onSelectMode, onNavigate }) {
               <ArrowRight className="w-5 h-5" />
             </button>
             <button
-              onClick={() => onSelectMode('speak')}
+              onClick={() => onNavigate('query')}
               className={`w-full sm:w-auto px-8 py-4 bg-emerald-950/80 hover:bg-emerald-900 border-2 border-agri-400/50 text-amber-200 font-bold text-lg rounded-2xl shadow-md transition-all flex items-center justify-center space-x-3 transform hover:-translate-y-0.5 ${isTe ? 'te-text' : ''}`}
             >
               <span>{t('btnTalkBhoomivani')}</span>

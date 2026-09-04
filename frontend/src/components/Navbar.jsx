@@ -1,19 +1,19 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useFarmer } from '../context/FarmerAuthContext';
-import { Sprout, Mic, LayoutDashboard, FolderKanban, CloudSun, User, PhoneCall, Globe } from 'lucide-react';
+import { Sprout, Mic, LayoutDashboard, FolderKanban, CloudSun, User, PhoneCall, Globe, LogOut, MessageSquare } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab }) {
   const { language, setLanguage, t } = useLanguage();
-  const { farmer } = useFarmer();
+  const { farmer, logout } = useFarmer();
 
   const toggleLanguage = () => {
     setLanguage(language === 'te' ? 'en' : 'te');
   };
 
   const navItems = [
-    { id: 'home', label: t('navHome'), icon: Sprout },
     { id: 'dashboard', label: t('navDashboard'), icon: LayoutDashboard },
+    { id: 'query', label: t('navQuery'), icon: MessageSquare },
     { id: 'analyze', label: t('navAnalyze'), icon: Mic },
     { id: 'cases', label: t('navCases'), icon: FolderKanban },
     { id: 'weather', label: t('navWeather'), icon: CloudSun },
@@ -26,7 +26,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
         
         {/* Brand Logo & Name */}
         <button 
-          onClick={() => setActiveTab('home')} 
+          onClick={() => setActiveTab('dashboard')} 
           className="flex items-center space-x-3 text-left focus:outline-none group"
         >
           <div className="w-12 h-12 rounded-xl bg-agri-500/20 border border-agri-400/30 flex items-center justify-center text-2xl shadow-inner group-hover:scale-105 transition-transform">
@@ -65,12 +65,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
           })}
         </nav>
 
-        {/* Controls: Language Switcher & Profile */}
-        <div className="flex items-center space-x-3">
+        {/* Controls: Language Switcher, Profile & Logout */}
+        <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Language Toggle Button */}
           <button
             onClick={toggleLanguage}
-            className="flex items-center space-x-2 bg-emerald-950/60 hover:bg-emerald-900 border border-agri-400/40 text-amber-200 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm active:scale-95"
+            className="flex items-center space-x-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-agri-400/40 text-amber-200 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm active:scale-95"
             title="Switch Language"
           >
             <Globe className="w-3.5 h-3.5 text-agri-400" />
@@ -88,6 +88,16 @@ export default function Navbar({ activeTab, setActiveTab }) {
           >
             <User className="w-4 h-4" />
             <span className="hidden sm:inline">{farmer.farmerId}</span>
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={logout}
+            className="flex items-center space-x-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+            title="Sign Out / Logout"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
 

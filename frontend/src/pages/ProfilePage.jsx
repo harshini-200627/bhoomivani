@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useFarmer } from '../context/FarmerAuthContext';
-import { User, Phone, MapPin, Globe, Sprout, CheckCircle2, Edit3, Save } from 'lucide-react';
+import { User, Phone, MapPin, Globe, Sprout, CheckCircle2, Edit3, Save, LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
   const { t, language, setLanguage } = useLanguage();
-  const { farmer, updateFarmer } = useFarmer();
+  const { farmer, updateFarmer, logout } = useFarmer();
   const isTe = language === 'te';
 
   const [isEditing, setIsEditing] = useState(false);
@@ -28,7 +28,6 @@ export default function ProfilePage() {
       
       <div className="agri-card p-8 space-y-6">
         
-        {/* Header */}
         <div className="flex items-center justify-between border-b pb-6">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 rounded-2xl bg-deepforest text-white flex items-center justify-center text-3xl font-extrabold shadow-md">
@@ -53,18 +52,15 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* Profile Details Form */}
         <form onSubmit={handleSave} className="space-y-6">
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             
-            {/* Farmer ID */}
             <div className="space-y-1 bg-slate-50 p-4 rounded-xl border">
               <label className="text-xs font-bold text-slate-500 uppercase block">Farmer ID</label>
               <div className="text-xl font-extrabold font-mono text-deepforest">{farmer.farmerId}</div>
             </div>
 
-            {/* Language Selection */}
             <div className="space-y-1 bg-slate-50 p-4 rounded-xl border">
               <label className="text-xs font-bold text-slate-500 uppercase block flex items-center space-x-1">
                 <Globe className="w-3.5 h-3.5" />
@@ -86,7 +82,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Name */}
             <div className="space-y-1 bg-slate-50 p-4 rounded-xl border">
               <label className="text-xs font-bold text-slate-500 uppercase block flex items-center space-x-1">
                 <User className="w-3.5 h-3.5" />
@@ -104,7 +99,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Phone */}
             <div className="space-y-1 bg-slate-50 p-4 rounded-xl border">
               <label className="text-xs font-bold text-slate-500 uppercase block flex items-center space-x-1">
                 <Phone className="w-3.5 h-3.5" />
@@ -122,7 +116,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Location */}
             <div className="sm:col-span-2 space-y-1 bg-slate-50 p-4 rounded-xl border">
               <label className="text-xs font-bold text-slate-500 uppercase block flex items-center space-x-1">
                 <MapPin className="w-3.5 h-3.5" />
@@ -142,7 +135,6 @@ export default function ProfilePage() {
 
           </div>
 
-          {/* Crops */}
           <div className="space-y-2 bg-emerald-50/50 p-5 rounded-2xl border border-emerald-200">
             <label className="text-xs font-bold text-emerald-900 uppercase block flex items-center space-x-1">
               <Sprout className="w-4 h-4 text-emerald-700" />
@@ -157,13 +149,22 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {isEditing && (
+          {isEditing ? (
             <button
               type="submit"
               className="w-full py-3 bg-agri-500 hover:bg-agri-600 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
             >
               <Save className="w-5 h-5" />
               <span>Save Profile Changes</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={logout}
+              className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sign Out / Log Out</span>
             </button>
           )}
 
