@@ -9,6 +9,23 @@ const Farmer = require("./models/Farmer");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
+// Automatically sync BHŪMIVĀṆĪ official logo image as website favicon
+const fs = require("fs");
+try {
+  const logoSource = "C:/Users/LENOVO/.gemini/antigravity/brain/c0105642-1eb2-407c-8017-519cda6bc765/.user_uploaded/media_1788922242240.jpg";
+  const targets = [
+    path.join(__dirname, "../frontend/public"),
+    path.join(__dirname, "../../scratch/bhoomivani/frontend/public")
+  ];
+  if (fs.existsSync(logoSource)) {
+    targets.forEach(targetDir => {
+      if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+      fs.copyFileSync(logoSource, path.join(targetDir, "favicon.jpg"));
+      fs.copyFileSync(logoSource, path.join(targetDir, "logo.jpg"));
+    });
+  }
+} catch (e) {}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

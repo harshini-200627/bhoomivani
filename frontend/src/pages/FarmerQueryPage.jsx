@@ -4,25 +4,18 @@ import { useFarmer } from '../context/FarmerAuthContext';
 import API_URL from '../services/api';
 import { 
   MessageSquare, Mic, Send, Volume2, Save, RefreshCw, Sparkles, 
-  MapPin, Sprout, AlertCircle, CheckCircle2, ShieldAlert, PhoneCall, PhoneOff, Radio
+  MapPin, Sprout, AlertCircle, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function FarmerQueryPage() {
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language } = useLanguage();
   const { farmer, updateActiveCase } = useFarmer();
   const isTe = language === 'te';
 
   const welcomeGreeting = isTe
-    ? 'భూమివాణికి స్వాగతం. నేను మీకు ఎలా సహాయం చేయగలను?'
-    : 'Welcome to BhūmiVāṇī. How can I help you?';
-
-  const waitingSpeechTe = 'దయచేసి వేచి ఉండండి. నేను మీ కోసం పరిశీలిస్తున్నాను.';
-  const waitingSpeechEn = 'Please wait, I am checking that for you.';
-
-  // State Management: 'idle' | 'listening' | 'checking' | 'speaking'
-  const [callState, setCallState] = useState('idle');
-  const [callActive, setCallActive] = useState(false);
+    ? 'నమస్కారం! నేను మీ భూమివాణి AI వ్యవసాయ సహాయకుడిని. మీ పంట, నీటి పారుదల, ఎరువులు, పురుగుల నివారణ లేదా వాతావరణానికి సంబంధించిన ఏదైనా ప్రశ్నను టైప్ చేసి లేదా మైక్రోఫోన్ ద్వారా మాట్లాడి అడగండి.'
+    : 'Greetings! I am your BhūmiVāṇī AI agricultural advisor. Ask any question about your crop, irrigation, fertilizer, pest control, or weather using text or voice microphone.';
 
   const [queryInput, setQueryInput] = useState('');
   const [messages, setMessages] = useState([
@@ -35,13 +28,16 @@ export default function FarmerQueryPage() {
     }
   ]);
 
+  const [isListening, setIsListening] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [savedMessageIds, setSavedMessageIds] = useState(new Set());
-  const chatEndRef = useRef(null);
-  const recognitionRef = useRef(null);
-  const callActiveRef = useRef(false);
   const [voices, setVoices] = useState([]);
 
-  // Load voices on mount
+  const chatEndRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const currentAudioRef = useRef(null);
+
+  // Load available speech synthesis voices
   useEffect(() => {
     const updateVoices = () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -54,34 +50,18 @@ export default function FarmerQueryPage() {
     }
   }, []);
 
-  // Keep callActiveRef in sync
-  useEffect(() => {
-    callActiveRef.current = callActive;
-  }, [callActive]);
-
-  // Quick suggestion prompts
-  const suggestions = isTe ? [
-    "🌶️ నా మిరప పంటకు నీళ్లు ఎప్పుడు పెట్టాలి?",
-    "🍅 టమోటా మొక్కల ఆకులు పసుపు రంగులోకి మారుతున్నాయి, ఏం చేయాలి?",
-    "🌾 ఎరువులు వేయడానికి వాతావరణం అనుకూలంగా ఉందా?",
-    "🌧️ రేపు వర్షం పడే అవకాశం ఉందా? పిచికారీ చేయవచ్చా?",
-    "🐛 పంటపై పురుగుల నివారణకు ఎలాంటి చర్యలు తీసుకోవాలి?",
-    "🌊 భారీ వర్షాల సమయంలో పొలంలో తీసుకోవాల్సిన జాగ్రత్తలు?"
-  ] : [
-    "🌶️ When should I irrigate my chilli crop?",
-    "🍅 Why are my tomato leaves turning yellow?",
-    "🌾 Is the weather suitable to apply fertilizer today?",
-    "🌧️ Can I spray pesticide today or is rain expected?",
-    "🐛 How can I control pests attacking my crop?",
-    "🌊 What precautions should I take during heavy rain?"
-  ];
-
   // Auto-scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, callState]);
+  }, [messages, loading, isListening]);
 
-  // Clean text helper for speech synthesis
+  // Helper to detect if text contains Telugu Unicode characters
+  const containsTelugu = (text) => {
+    if (!text) return false;
+    return /[\u0C00-\u0C7F]/.test(text);
+  };
+
+  // Helper to clean formatting characters before TTS
   const cleanTextForSpeech = (text) => {
     if (!text) return '';
     return String(text)
@@ -93,15 +73,7 @@ export default function FarmerQueryPage() {
       .trim();
   };
 
-  // Helper to detect if a string contains Telugu characters
-  const containsTelugu = (text) => {
-    if (!text) return false;
-    return /[\u0C00-\u0C7F]/.test(text);
-  };
-
-  // Text-to-Speech Helper with Guaranteed Native Telugu Audio & English SpeechSynthesis
-  const currentAudioRef = useRef(null);
-
+  // Text-to-Speech Helper (Supports Telugu API TTS + Web SpeechSynthesis)
   const speakAndWait = (text, explicitLang = null) => {
     return new Promise((resolve) => {
       if (!text) {
@@ -129,7 +101,7 @@ export default function FarmerQueryPage() {
 
       if (isTextTelugu) {
         try {
-          const sentences = cleaned.match(/[^.!?।]+[.!?।]?/g) || [cleaned];
+          const sentences = cleaned.match(/[^.!?।]+[.!?<ctrl42>]?/g) || [cleaned];
           let currentIdx = 0;
 
           const playNext = () => {
@@ -204,13 +176,19 @@ export default function FarmerQueryPage() {
     }, 100);
   };
 
-  // Web Speech Recognition Controller (Supports Telugu & English)
-  const startListening = () => {
+  // Microphone Speech Recognition Handler (Browser Voice Input)
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e){}
+      }
+      setIsListening(false);
+      return;
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert(isTe ? "మీ బ్రౌజర్‌లో వాయిస్ రికగ్నిషన్ సపోర్ట్ లేదు." : "Voice recognition is not supported in this browser.");
-      setCallState('idle');
-      setCallActive(false);
+      alert(isTe ? "మీ బ్రౌజర్‌లో వాయిస్ రికగ్నిషన్ సపోర్ట్ లేదు. దయచేసి టైప్ చేయండి." : "Voice recognition is not supported in your browser. Please type your question.");
       return;
     }
 
@@ -220,190 +198,53 @@ export default function FarmerQueryPage() {
       }
 
       const recognition = new SpeechRecognition();
-      // Listen in Telugu by default if in Telugu mode, or accept both
+      // Use Telugu speech recognition if app is in Telugu or detect mixed speech
       recognition.lang = isTe ? 'te-IN' : 'en-IN';
       recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
       recognitionRef.current = recognition;
 
       recognition.onstart = () => {
-        setCallState('listening');
+        setIsListening(true);
       };
 
       recognition.onend = () => {
-        if (callActiveRef.current && callState === 'listening') {
-          try { recognition.start(); } catch(e){}
-        }
+        setIsListening(false);
       };
 
       recognition.onerror = (e) => {
         console.warn("Speech recognition error:", e.error);
-        if (callActiveRef.current && e.error !== 'aborted') {
-          setTimeout(() => {
-            if (callActiveRef.current) {
-              try { recognition.start(); } catch(e){}
-            }
-          }, 500);
-        }
+        setIsListening(false);
       };
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         if (transcript && transcript.trim()) {
-          try { recognition.abort(); } catch(e){}
-          handleProcessVoiceQuery(transcript.trim());
+          const text = transcript.trim();
+          setQueryInput(text);
+          setIsListening(false);
+          // Automatically send the recognized spoken question to AI
+          handleSendQuery(text);
         }
       };
 
       recognition.start();
     } catch (err) {
       console.error("Speech Recognition Exception:", err);
-      setCallState('idle');
+      setIsListening(false);
     }
   };
 
-  // 1. START ADVISORY CALL
-  const handleStartCall = async () => {
-    setCallActive(true);
-    callActiveRef.current = true;
-    setCallState('speaking');
-
-    // Speak welcome greeting
-    await speakAndWait(welcomeGreeting, isTe ? 'te' : 'en');
-
-    // Automatically begin listening
-    if (callActiveRef.current) {
-      setCallState('listening');
-      startListening();
-    }
-  };
-
-  // 2. END ADVISORY CALL
-  const handleEndCall = () => {
-    setCallActive(false);
-    callActiveRef.current = false;
-    setCallState('idle');
-
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch(e){}
-    }
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-  };
-
-  // 3. PROCESS USER QUERY FROM VOICE (Dynamic Telugu / English handling)
-  const handleProcessVoiceQuery = async (transcriptText) => {
-    if (!transcriptText || !transcriptText.trim()) return;
-
-    // Detect language of the farmer's question
-    const isQuestionTelugu = containsTelugu(transcriptText) || isTe;
-    const detectedLang = isQuestionTelugu ? 'te' : 'en';
-
-    // Immediately change state to Checking
-    setCallState('checking');
-
-    // Immediately speak waiting speech in the farmer's language
-    const waitingSpeech = isQuestionTelugu ? waitingSpeechTe : waitingSpeechEn;
-    speakAndWait(waitingSpeech, detectedLang);
-
-    const userMessageId = `user-${Date.now()}`;
-    const userMsg = {
-      id: userMessageId,
-      sender: 'farmer',
-      text: transcriptText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-
-    // Multi-turn context: take last 3 recent turns
-    const historyPayload = updatedMessages
-      .filter(m => m.id !== 'welcome')
-      .slice(-3)
-      .map(m => ({ sender: m.sender, text: m.text }));
-
-    try {
-      const response = await fetch(`${API_URL}/api/farmer-query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: transcriptText,
-          conversationHistory: historyPayload,
-          farmerContext: {
-            farmerId: farmer.farmerId || 'Farmer',
-            location: farmer.location || 'Vijayawada, AP',
-            crops: farmer.crops || ['Chilli'],
-            preferredLanguage: detectedLang
-          },
-          language: detectedLang
-        })
-      });
-
-      const data = await response.json();
-      const aiAnswerText = data.shortAdvisory || data.advisoryText || data.answer || (
-        detectedLang === 'te' 
-          ? "మీ పంటను నిశితంగా గమనించండి. వాతావరణ పరిస్థితులకు అనుగుణంగా తగిన చర్యలు తీసుకోండి." 
-          : "Monitor your crop regularly. Take appropriate action based on current conditions."
-      );
-
-      const aiMsg = {
-        id: `ai-${Date.now()}`,
-        sender: 'bhoomivani',
-        text: aiAnswerText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        modelUsed: 'BhūmiVāṇī Advisory'
-      };
-
-      setMessages(prev => [...prev, aiMsg]);
-
-      // Change state to Speaking and speak answer in the SAME language
-      setCallState('speaking');
-      await speakAndWait(aiAnswerText, detectedLang);
-
-      // Automatically listen again for the next question if call still active
-      if (callActiveRef.current) {
-        setCallState('listening');
-        startListening();
-      } else {
-        setCallState('idle');
-      }
-    } catch (error) {
-      console.error("Voice Query Processing Error:", error);
-      const fallbackText = detectedLang === 'te'
-        ? "మీ పంటను నిశితంగా గమనించండి. వర్షం మరియు వాతావరణ పరిస్థితులకు అనుగుణంగా తగిన చర్యలు తీసుకోండి."
-        : "Monitor your crop closely. Apply recommended agricultural practices based on current conditions.";
-      
-      const fallbackMsg = {
-        id: `ai-err-${Date.now()}`,
-        sender: 'bhoomivani',
-        text: fallbackText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        modelUsed: 'BhūmiVāṇī Advisory'
-      };
-
-      setMessages(prev => [...prev, fallbackMsg]);
-      setCallState('speaking');
-      await speakAndWait(fallbackText, detectedLang);
-
-      if (callActiveRef.current) {
-        setCallState('listening');
-        startListening();
-      } else {
-        setCallState('idle');
-      }
-    }
-  };
-
-  // Standard Text Submit handler
-  const handleSendTextQuery = async (overrideText) => {
+  // Send Farmer Question (Text or Voice Input) to AI Advisory Backend
+  const handleSendQuery = async (overrideText) => {
     const textToSend = overrideText || queryInput;
-    if (!textToSend || textToSend.trim().length === 0 || callState === 'checking') return;
+    if (!textToSend || !textToSend.trim() || loading) return;
 
     const isQuestionTelugu = containsTelugu(textToSend) || isTe;
     const detectedLang = isQuestionTelugu ? 'te' : 'en';
 
-    setCallState('checking');
+    setLoading(true);
+
     const userMessageId = `user-${Date.now()}`;
     const userMsg = {
       id: userMessageId,
@@ -416,6 +257,7 @@ export default function FarmerQueryPage() {
     setMessages(updatedMessages);
     setQueryInput('');
 
+    // Recent 3 conversation turns payload for context
     const historyPayload = updatedMessages
       .filter(m => m.id !== 'welcome')
       .slice(-3)
@@ -441,8 +283,8 @@ export default function FarmerQueryPage() {
       const data = await response.json();
       const aiAnswerText = data.shortAdvisory || data.advisoryText || data.answer || (
         detectedLang === 'te' 
-          ? "మీ పంటను నిశితంగా గమనించండి." 
-          : "Monitor your crop regularly."
+          ? "మీ పంటను నిశితంగా గమనించండి. ప్రస్తుత వాతావరణానికి అనుగుణంగా తగిన చర్యలు తీసుకోండి." 
+          : "Monitor your crop regularly. Take appropriate action based on current conditions."
       );
 
       const aiMsg = {
@@ -454,6 +296,9 @@ export default function FarmerQueryPage() {
       };
 
       setMessages(prev => [...prev, aiMsg]);
+
+      // Automatically speak the AI response in the recognized language
+      speakAndWait(aiAnswerText, detectedLang);
     } catch (err) {
       console.error("Farmer Query Error:", err);
       const fallbackText = detectedLang === 'te'
@@ -467,9 +312,11 @@ export default function FarmerQueryPage() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         modelUsed: 'BhūmiVāṇī Advisory'
       };
+
       setMessages(prev => [...prev, fallbackMsg]);
+      speakAndWait(fallbackText, detectedLang);
     } finally {
-      setCallState('idle');
+      setLoading(false);
     }
   };
 
@@ -502,11 +349,14 @@ export default function FarmerQueryPage() {
   };
 
   const handleListenAdvisory = (text) => {
-    speakAndWait(text);
+    const isMsgTelugu = containsTelugu(text) || isTe;
+    speakAndWait(text, isMsgTelugu ? 'te' : 'en');
   };
 
   const handleClearSession = () => {
-    handleEndCall();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     setMessages([
       {
         id: 'welcome',
@@ -518,6 +368,23 @@ export default function FarmerQueryPage() {
     ]);
   };
 
+  // Quick suggestion prompts
+  const suggestions = isTe ? [
+    "🌶️ నా మిరప పంటకు నీళ్లు ఎప్పుడు పెట్టాలి?",
+    "🍅 టమోటా మొక్కల ఆకులు పసుపు రంగులోకి మారుతున్నాయి, ఏం చేయాలి?",
+    "🌾 ఎరువులు వేయడానికి వాతావరణం అనుకూలంగా ఉందా?",
+    "🌧️ రేపు వర్షం పడే అవకాశం ఉందా? పిచికారీ చేయవచ్చా?",
+    "🐛 పంటపై పురుగుల నివారణకు ఎలాంటి చర్యలు తీసుకోవాలి?",
+    "🌊 భారీ వర్షాల సమయంలో పొలంలో తీసుకోవాల్సిన జాగ్రత్తలు?"
+  ] : [
+    "🌶️ When should I irrigate my chilli crop?",
+    "🍅 Why are my tomato leaves turning yellow?",
+    "🌾 Is the weather suitable to apply fertilizer today?",
+    "🌧️ Can I spray pesticide today or is rain expected?",
+    "🐛 How can I control pests attacking my crop?",
+    "🌊 What precautions should I take during heavy rain?"
+  ];
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
       
@@ -526,10 +393,10 @@ export default function FarmerQueryPage() {
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="inline-flex items-center space-x-2 bg-emerald-950/70 border border-agri-400/40 text-amber-300 px-3 py-1 rounded-full text-xs font-semibold">
-              <MapPin className="w-3 h-3" />
+              <MapPin className="w-3.5 h-3.5" />
               <span>{farmer.location || 'Vijayawada, AP'}</span>
               <span className="opacity-50">•</span>
-              <Sprout className="w-3 h-3 text-emerald-400" />
+              <Sprout className="w-3.5 h-3.5 text-emerald-400" />
               <span>{Array.isArray(farmer.crops) ? farmer.crops.join(', ') : (farmer.crops || 'Farming')}</span>
             </div>
             <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${isTe ? 'te-text' : ''}`}>
@@ -540,63 +407,16 @@ export default function FarmerQueryPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Start / End Advisory Call Button */}
-            {!callActive ? (
-              <button
-                onClick={handleStartCall}
-                className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center space-x-1.5"
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>📞 {isTe ? 'కాల్ ప్రారంభించండి (Start Call)' : 'Start Call'}</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleEndCall}
-                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center space-x-1.5 animate-pulse"
-              >
-                <PhoneOff className="w-4 h-4" />
-                <span>{isTe ? 'కాల్ ముగించండి (End Call)' : 'End Call'}</span>
-              </button>
-            )}
-
-            <button
-              onClick={handleClearSession}
-              className="px-3.5 py-2.5 bg-emerald-800/60 hover:bg-emerald-700 text-amber-200 border border-emerald-600 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0"
-              title="New Conversation"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>{t('newConversation')}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* LIVE CALL STATUS BAR (Active during voice dialogue) */}
-      {callActive && (
-        <div className="bg-slate-950 text-white p-4 rounded-2xl flex items-center justify-between border-2 border-emerald-500/50 shadow-lg">
-          <div className="flex items-center space-x-3">
-            <Radio className={`w-5 h-5 text-emerald-400 ${callState === 'listening' ? 'animate-ping' : 'animate-pulse'}`} />
-            <div>
-              <p className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
-                {callState === 'listening' && (isTe ? '🎙️ వింటున్నాము... (Listening)' : '🎙️ Listening to your question...')}
-                {callState === 'checking' && (isTe ? '⚙️ పరిశీలిస్తున్నాము... (Checking)' : '⚙️ Checking for you...')}
-                {callState === 'speaking' && (isTe ? '🔊 సమాధానం ఇస్తున్నాము... (Speaking)' : '🔊 Speaking response...')}
-              </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                {isTe ? 'మీ ప్రశ్నను సహజంగా మాట్లాడండి' : 'Speak your farming question naturally in Telugu or English'}
-              </p>
-            </div>
-          </div>
-
           <button
-            onClick={handleEndCall}
-            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all"
+            onClick={handleClearSession}
+            className="px-3.5 py-2.5 bg-emerald-800/60 hover:bg-emerald-700 text-amber-200 border border-emerald-600 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0"
+            title="New Conversation"
           >
-            End Call
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>{t('newConversation')}</span>
           </button>
         </div>
-      )}
+      </div>
 
       {/* QUICK SUGGESTIONS CHIPS */}
       <div className="space-y-2">
@@ -607,7 +427,7 @@ export default function FarmerQueryPage() {
           {suggestions.map((sugg, idx) => (
             <button
               key={idx}
-              onClick={() => handleSendTextQuery(sugg.replace(/^[^\s]+\s/, ''))}
+              onClick={() => handleSendQuery(sugg.replace(/^[^\s]+\s/, ''))}
               className={`text-xs bg-white hover:bg-agri-50 border border-slate-200 hover:border-agri-400 text-slate-800 font-medium px-3.5 py-2 rounded-xl transition-all shadow-sm hover:shadow active:scale-95 text-left ${isTe ? 'te-text' : ''}`}
             >
               {sugg}
@@ -685,13 +505,13 @@ export default function FarmerQueryPage() {
           );
         })}
 
-        {/* CHECKING SPINNER */}
-        {callState === 'checking' && (
+        {/* LOADING / PROCESSING SPINNER */}
+        {loading && (
           <div className="flex justify-start">
             <div className="bg-white border-2 border-agri-400 rounded-2xl p-4 shadow-md flex items-center space-x-3 text-deepforest">
               <Sparkles className="w-5 h-5 text-agri-600 animate-spin" />
               <span className="text-xs font-bold">
-                {isTe ? "దయచేసి వేచి ఉండండి. నేను మీ కోసం పరిశీలిస్తున్నాను..." : "Please wait, I am checking that for you..."}
+                {isTe ? "దయచేసి వేచి ఉండండి. భూమివాణి సమాధానం సిద్ధం చేస్తోంది..." : "Please wait, BhūmiVāṇī is analyzing your question..."}
               </span>
             </div>
           </div>
@@ -700,27 +520,43 @@ export default function FarmerQueryPage() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* INPUT TOOLBAR: VOICE & TEXT */}
+      {/* INPUT TOOLBAR: TEXT INPUT + MICROPHONE VOICE INPUT */}
       <div className="agri-card p-3 sm:p-4 border-2 border-agri-400 shadow-xl space-y-3">
         
+        {isListening && (
+          <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold flex items-center justify-between animate-pulse">
+            <div className="flex items-center space-x-2">
+              <Mic className="w-4 h-4 text-red-600 animate-bounce" />
+              <span>{isTe ? '🎙️ వింటున్నాము... మీ వ్యవసాయ ప్రశ్నను మాట్లాడండి' : '🎙️ Listening... Speak your farming question now'}</span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleVoiceInput}
+              className="text-[11px] bg-red-600 text-white px-2 py-0.5 rounded hover:bg-red-700"
+            >
+              Stop
+            </button>
+          </div>
+        )}
+
         <form
-          onSubmit={(e) => { e.preventDefault(); handleSendTextQuery(); }}
+          onSubmit={(e) => { e.preventDefault(); handleSendQuery(); }}
           className="flex items-center space-x-2"
         >
-          {/* Voice Call / Microphone Button */}
+          {/* Microphone Voice Input Button */}
           <button
             type="button"
-            onClick={callActive ? handleEndCall : handleStartCall}
+            onClick={toggleVoiceInput}
             className={`p-3 sm:px-4 rounded-xl font-bold text-xs transition-all flex items-center space-x-1.5 shrink-0 shadow-md ${
-              callActive
-                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+              isListening
+                ? 'bg-red-600 text-white animate-pulse'
                 : 'bg-amber-400 hover:bg-amber-500 text-slate-950'
             }`}
-            title="Start Continuous Voice Dialogue"
+            title="Tap to Speak (Telugu / English)"
           >
-            <Mic className={`w-5 h-5 ${callState === 'listening' ? 'animate-bounce' : ''}`} />
+            <Mic className={`w-5 h-5 ${isListening ? 'animate-bounce' : ''}`} />
             <span className="hidden sm:inline font-bold">
-              {callActive ? (isTe ? 'కాల్ ఆపండి' : 'End Call') : (isTe ? 'వాయిస్ మాట్లాడండి' : 'Voice Call')}
+              {isListening ? (isTe ? 'వింటోంది...' : 'Listening...') : (isTe ? 'మాట్లాడండి (Speak)' : 'Speak')}
             </span>
           </button>
 
@@ -729,17 +565,17 @@ export default function FarmerQueryPage() {
             type="text"
             value={queryInput}
             onChange={(e) => setQueryInput(e.target.value)}
-            disabled={callState === 'checking'}
-            placeholder={isTe ? "మీ వ్యవసాయ ప్రశ్నను ఇక్కడ అడగండి..." : "Type or speak your agriculture question here..."}
+            disabled={loading}
+            placeholder={isTe ? "మీ వ్యవసాయ ప్రశ్నను ఇక్కడ టైప్ చేయండి లేదా మాట్లాడండి..." : "Type or speak your agriculture question..."}
             className={`flex-grow p-3 sm:p-3.5 rounded-xl border border-slate-300 focus:border-agri-500 focus:ring-2 focus:ring-agri-200 text-slate-800 text-sm font-medium ${isTe ? 'te-text' : ''}`}
           />
 
           {/* Send Submit Button */}
           <button
             type="submit"
-            disabled={callState === 'checking' || !queryInput.trim()}
+            disabled={loading || !queryInput.trim()}
             className={`px-5 py-3 sm:py-3.5 bg-agri-600 hover:bg-agri-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center space-x-2 shrink-0 ${
-              callState === 'checking' || !queryInput.trim() ? 'opacity-50 cursor-not-allowed' : ''
+              loading || !queryInput.trim() ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             <span>{t('btnSend')}</span>
@@ -750,10 +586,10 @@ export default function FarmerQueryPage() {
         <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
           <div className="flex items-center space-x-1.5">
             <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-            <span>AI Agricultural Voice Advisory • Natural Telugu & English Voice Output</span>
+            <span>AI Agricultural Advisory • Text & Voice Microphone Input (Telugu & English)</span>
           </div>
           <span className="font-mono font-semibold text-emerald-800">
-            Current Language: {isTe ? 'తెలుగు (Telugu)' : 'English'}
+            Language: {isTe ? 'తెలుగు (Telugu)' : 'English'}
           </span>
         </div>
 

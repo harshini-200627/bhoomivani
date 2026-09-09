@@ -29,8 +29,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
           onClick={() => setActiveTab('dashboard')} 
           className="flex items-center space-x-3 text-left focus:outline-none group"
         >
-          <div className="w-12 h-12 rounded-xl bg-agri-500/20 border border-agri-400/30 flex items-center justify-center text-2xl shadow-inner group-hover:scale-105 transition-transform">
-            🌾
+          <div className="w-12 h-12 rounded-xl bg-white border border-agri-400/30 flex items-center justify-center shadow-md overflow-hidden group-hover:scale-105 transition-transform p-1">
+            <img src="/favicon.jpg" alt="BhūmiVāṇī Logo" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerText = '🌾'; }} />
           </div>
           <div>
             <div className="flex items-baseline space-x-2">
